@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3 good things — 今日の良かったこと</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night-deep:   #230879;
+    --accent-gold:  #c9a96e;
+    --accent-soft:  #8fa8d0;
+    --accent-rose:  #c47a7a;
+    --text-main:    #e8e0d5;
+    --text-muted:   #7a8aaa;
+    --text-dim:     #4a5568;
+    --glass-bg:     rgba(255,255,255,0.05);
+    --glass-border: rgba(255,255,255,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100vh; overflow-x: hidden; }
+
+  body {
+    background: var(--night-deep);
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Cormorant Garamond', Georgia, serif;
+    color: var(--text-main);
+    position: relative;
+  }
+
+  #starfield { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+  .bg-gradient {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 90% 50% at 50% 110%, #3a4a8866 0%, transparent 65%),
+      radial-gradient(ellipse 70% 40% at 80% 100%, #2a3a7044 0%, transparent 60%),
+      radial-gradient(ellipse 80% 50% at 20% 0%, #1a0a5522 0%, transparent 60%),
+      linear-gradient(to bottom, #230879 0%, #1e1060 25%, #1a1f55 55%, #1e2a50 80%, #253050 100%);
+  }
+
+  .moon {
+    position: fixed; top: 48px; right: 72px;
+    width: 72px; height: 72px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 38%, #fff8e8, #e8d5a8 50%, #c4a96040);
+    box-shadow: 0 0 30px 10px rgba(220,190,120,0.18), 0 0 80px 30px rgba(180,150,80,0.08);
+    z-index: 1;
+    animation: moonGlow 6s ease-in-out infinite;
+  }
+  @keyframes moonGlow {
+    0%,100% { box-shadow: 0 0 30px 10px rgba(220,190,120,0.18), 0 0 80px 30px rgba(180,150,80,0.08); }
+    50%      { box-shadow: 0 0 40px 16px rgba(220,190,120,0.28), 0 0 100px 40px rgba(180,150,80,0.14); }
+  }
+
+  /* ══ パスワード画面 ══ */
+  #lock-screen {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(to bottom, #230879 0%, #1a1f55 100%);
+  }
+  .lock-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px; padding: 48px 40px;
+    width: 90%; max-width: 360px; text-align: center;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: fadeUp 0.6s ease both;
+  }
+  .lock-moon { font-size: 36px; margin-bottom: 16px; }
+  .lock-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 300; letter-spacing: 0.18em;
+    color: var(--accent-gold); margin-bottom: 6px;
+    text-shadow: 0 0 20px rgba(201,169,110,0.4);
+  }
+  .lock-sub { font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em; margin-bottom: 32px; }
+  .lock-input {
+    width: 100%; padding: 14px 18px;
+    border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04); color: var(--text-main);
+    font-size: 16px; font-family: inherit; outline: none; text-align: center;
+    letter-spacing: 0.2em; caret-color: var(--accent-gold);
+    transition: border-color 0.3s;
+    margin-bottom: 16px;
+  }
+  .lock-input:focus { border-color: rgba(201,169,110,0.4); }
+  .lock-btn {
+    width: 100%; padding: 14px; border-radius: 12px;
+    border: 1px solid rgba(201,169,110,0.35);
+    background: rgba(201,169,110,0.1); color: var(--accent-gold);
+    font-size: 14px; font-family: inherit; cursor: pointer;
+    letter-spacing: 0.2em; transition: all 0.3s;
+  }
+  .lock-btn:hover { background: rgba(201,169,110,0.2); }
+  .lock-error {
+    font-size: 12px; color: var(--accent-rose);
+    margin-top: 12px; letter-spacing: 0.06em;
+    min-height: 18px;
+  }
+
+  /* ══ メインコンテンツ ══ */
+  .content { position: relative; z-index: 2; min-height: 100vh; display: none; }
+
+  header {
+    padding: 28px 28px 20px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    max-width: 680px; margin: 0 auto;
+    animation: fadeUp 1s ease both;
+  }
+  .logo-wrap h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px; font-weight: 300; letter-spacing: 0.18em;
+    color: var(--accent-gold); text-shadow: 0 0 20px rgba(201,169,110,0.4);
+  }
+  .logo-wrap p { font-size: 11px; color: var(--text-muted); letter-spacing: 0.2em; margin-top: 4px; }
+
+  nav { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .nav-btn {
+    padding: 7px 16px; border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg); color: var(--text-muted);
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    letter-spacing: 0.06em; transition: all 0.3s; backdrop-filter: blur(8px);
+  }
+  .nav-btn:hover { border-color: rgba(201,169,110,0.4); color: var(--accent-gold); }
+  .nav-btn.active {
+    border-color: rgba(201,169,110,0.5); background: rgba(201,169,110,0.1);
+    color: var(--accent-gold); text-shadow: 0 0 10px rgba(201,169,110,0.3);
+  }
+
+  main { max-width: 680px; margin: 0 auto; padding: 8px 28px 100px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
+    border-radius: 20px; padding: 32px; margin-bottom: 16px;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+    animation: fadeUp 0.8s ease both;
+  }
+  .card.stress-card { border-color: rgba(196,122,122,0.2); background: rgba(196,122,122,0.03); }
+  .card.quote-card {
+    border-color: rgba(143,168,208,0.2); background: rgba(143,168,208,0.03);
+    text-align: center; padding: 28px 36px;
+  }
+
+  .today-date { font-size: 12px; color: var(--text-muted); text-align: center; letter-spacing: 0.14em; margin-bottom: 24px; }
+  .greeting { text-align: center; font-size: 14px; color: var(--text-muted); margin-bottom: 28px; font-style: italic; line-height: 1.8; letter-spacing: 0.04em; white-space: pre-line; }
+  .already-saved { background: rgba(143,168,208,0.08); border: 1px solid rgba(143,168,208,0.15); border-radius: 10px; padding: 10px 16px; margin-bottom: 24px; font-size: 12px; color: var(--accent-soft); letter-spacing: 0.04em; text-align: center; }
+
+  .section-label { font-size: 11px; letter-spacing: 0.18em; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-label.good  { color: var(--accent-gold); }
+  .section-label.stress { color: var(--accent-rose); }
+  .section-label::before, .section-label::after { content: ''; flex: 1; height: 1px; }
+  .section-label.good::before,  .section-label.good::after  { background: linear-gradient(90deg, transparent, rgba(201,169,110,0.3), transparent); }
+  .section-label.stress::before,.section-label.stress::after { background: linear-gradient(90deg, transparent, rgba(196,122,122,0.3), transparent); }
+
+  .field { margin-bottom: 16px; }
+  label { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); letter-spacing: 0.1em; }
+  .num-badge { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(201,169,110,0.35); background: rgba(201,169,110,0.08); color: var(--accent-gold); display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+
+  textarea {
+    width: 100%; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 12px 16px;
+    font-size: 15px; font-family: inherit; color: var(--text-main); background: rgba(255,255,255,0.03);
+    resize: none; outline: none; line-height: 1.75;
+    transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+    min-height: 58px; caret-color: var(--accent-gold);
+  }
+  textarea::placeholder { color: var(--text-dim); }
+  textarea:focus { border-color: rgba(201,169,110,0.35); background: rgba(201,169,110,0.04); box-shadow: 0 0 0 3px rgba(201,169,110,0.06); }
+  textarea.stress-ta:focus { border-color: rgba(196,122,122,0.35); background: rgba(196,122,122,0.04); box-shadow: 0 0 0 3px rgba(196,122,122,0.06); }
+
+  .stress-note { font-size: 11px; color: rgba(196,122,122,0.5); letter-spacing: 0.06em; margin-bottom: 10px; font-style: italic; text-align: center; }
+
+  .save-btn {
+    width: 100%; padding: 15px; border-radius: 14px;
+    border: 1px solid rgba(201,169,110,0.35); background: rgba(201,169,110,0.1);
+    color: var(--accent-gold); font-size: 14px; font-family: inherit;
+    cursor: pointer; letter-spacing: 0.2em; transition: all 0.35s;
+    text-shadow: 0 0 12px rgba(201,169,110,0.3); margin-top: 8px;
+  }
+  .save-btn:hover { background: rgba(201,169,110,0.18); box-shadow: 0 0 20px rgba(201,169,110,0.15); }
+  .save-btn.saved { border-color: rgba(120,180,130,0.4); background: rgba(120,180,130,0.1); color: #8fc99a; text-shadow: 0 0 12px rgba(120,180,130,0.3); }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .entry-count { text-align: center; font-size: 11px; color: var(--text-dim); letter-spacing: 0.12em; margin-bottom: 16px; }
+
+  /* ── 名言 ── */
+  .quote-icon { font-size: 22px; margin-bottom: 14px; opacity: 0.4; }
+  .quote-text { font-size: 16px; line-height: 2; letter-spacing: 0.06em; color: var(--text-main); font-style: italic; margin-bottom: 14px; }
+  .quote-author { font-size: 11px; color: var(--accent-soft); letter-spacing: 0.2em; opacity: 0.7; }
+  .quote-card { animation: fadeUp 1s ease 0.4s both; }
+
+  .night-message { text-align: center; font-size: 12px; color: var(--text-dim); font-style: italic; letter-spacing: 0.1em; margin-top: 8px; margin-bottom: 4px; line-height: 2; }
+
+  /* ── 接続ステータス ── */
+  .db-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text-dim); letter-spacing: 0.08em;
+    margin-bottom: 16px; justify-content: center;
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+  .status-dot.ok   { background: #6abf7a; box-shadow: 0 0 6px rgba(106,191,122,0.5); }
+  .status-dot.err  { background: var(--accent-rose); }
+  .status-dot.loading { background: var(--accent-gold); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── 履歴 ── */
+  .log-toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+  .search-wrap { position: relative; flex: 1; }
+  .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-dim); pointer-events: none; }
+  input[type="text"] {
+    width: 100%; padding: 12px 16px 12px 40px;
+    border-radius: 14px; border: 1px solid var(--glass-border);
+    background: var(--glass-bg); font-size: 13px; font-family: inherit;
+    color: var(--text-main); outline: none; backdrop-filter: blur(10px);
+    letter-spacing: 0.04em; transition: border-color 0.3s; caret-color: var(--accent-gold);
+  }
+  input[type="text"]::placeholder { color: var(--text-dim); }
+  input[type="text"]:focus { border-color: rgba(201,169,110,0.3); }
+
+  .csv-btn {
+    padding: 11px 16px; border-radius: 14px; white-space: nowrap;
+    border: 1px solid rgba(143,168,208,0.3); background: rgba(143,168,208,0.07);
+    color: var(--accent-soft); font-size: 12px; font-family: inherit;
+    cursor: pointer; letter-spacing: 0.08em; transition: all 0.3s;
+  }
+  .csv-btn:hover { background: rgba(143,168,208,0.14); }
+
+  .empty-state { text-align: center; padding: 80px 20px; color: var(--text-dim); font-size: 14px; line-height: 2.2; letter-spacing: 0.06em; font-style: italic; }
+
+  .entry-card {
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
+    border-radius: 16px; padding: 22px 24px; margin-bottom: 12px;
+    backdrop-filter: blur(16px); box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    animation: fadeUp 0.5s ease both; transition: border-color 0.3s;
+  }
+  .entry-card:hover { border-color: rgba(201,169,110,0.2); }
+  .entry-date { font-size: 11px; color: var(--accent-gold); letter-spacing: 0.15em; opacity: 0.7; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .entry-section-title { font-size: 10px; letter-spacing: 0.2em; margin: 10px 0 8px; opacity: 0.5; }
+  .entry-section-title.good   { color: var(--accent-gold); }
+  .entry-section-title.stress { color: var(--accent-rose); }
+  .entry-item { display: flex; gap: 12px; margin-bottom: 8px; align-items: flex-start; }
+  .entry-item:last-child { margin-bottom: 0; }
+  .entry-num { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(201,169,110,0.25); color: rgba(201,169,110,0.6); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 3px; }
+  .entry-num.stress-num { border-color: rgba(196,122,122,0.25); color: rgba(196,122,122,0.6); }
+  .entry-text { font-size: 14px; line-height: 1.75; color: var(--text-main); opacity: 0.85; }
+  .entry-text.stress-text { opacity: 0.65; }
+
+  .divider { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent-gold), transparent); margin: 0 auto 24px; opacity: 0.4; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  @media (max-width: 480px) {
+    header { padding: 20px 20px 14px; }
+    main   { padding: 8px 20px 80px; }
+    .moon  { width: 52px; height: 52px; top: 32px; right: 32px; }
+    .card  { padding: 24px 20px; }
+    .log-toolbar { flex-wrap: wrap; }
+    .csv-btn { width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="bg-gradient"></div>
+<div class="moon"></div>
+
+<!-- ══ パスワード画面 ══ -->
+<div id="lock-screen">
+  <div class="lock-card">
+    <div class="lock-moon">🌙</div>
+    <h1 class="lock-title">3 good things</h1>
+    <p class="lock-sub">今日の良かったこと</p>
+    <input class="lock-input" type="password" id="lock-input" placeholder="パスワードを入力" autocomplete="current-password">
+    <button class="lock-btn" onclick="checkPassword()">入 る</button>
+    <p class="lock-error" id="lock-error"></p>
+  </div>
+</div>
+
+<!-- ══ メインコンテンツ ══ -->
+<div class="content" id="main-content">
+  <header>
+    <div class="logo-wrap">
+      <h1>3 good things</h1>
+      <p>今日の良かったこと</p>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="switchView('write', this)">✦ 記録</button>
+      <button class="nav-btn" onclick="switchView('log', this)">◎ 履歴</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ── WRITE VIEW ── -->
+    <div id="view-write" class="view active">
+
+      <div class="card">
+        <p class="today-date" id="today-label"></p>
+        <div class="divider"></div>
+        <p class="greeting" id="greeting-text"></p>
+        <div id="already-saved-msg" class="already-saved" style="display:none">
+          ✦ 今日はすでに記録済みです。上書き保存されます。
+        </div>
+        <div class="section-label good">今日の良かったこと</div>
+        <div class="field">
+          <label><span class="num-badge">1</span>良かったこと</label>
+          <textarea id="t1" placeholder="今日うれしかったことは？" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label><span class="num-badge">2</span>良かったこと</label>
+          <textarea id="t2" placeholder="小さなことでも大丈夫" rows="2"></textarea>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label><span class="num-badge">3</span>良かったこと</label>
+          <textarea id="t3" placeholder="自分を褒めてあげよう" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="card stress-card">
+        <div class="section-label stress">ストレス・もやもや</div>
+        <p class="stress-note">ここだけの話。吐き出したら少し楽になるかもしれない。</p>
+        <textarea id="ts" class="stress-ta" placeholder="今日しんどかったこと、イライラしたこと、誰にも言えないこと…" rows="3"></textarea>
+      </div>
+
+      <div class="db-status">
+        <span class="status-dot loading" id="status-dot"></span>
+        <span id="status-text">接続中...</span>
+      </div>
+
+      <button class="save-btn" id="save-btn" onclick="saveEntry()">保 存 す る</button>
+      <p class="entry-count" id="entry-count"></p>
+
+      <div class="card quote-card" id="quote-card">
+        <div class="quote-icon">✦</div>
+        <p class="quote-text" id="quote-text"></p>
+        <p class="quote-author" id="quote-author"></p>
+      </div>
+
+      <p class="night-message">穏やかな夜を、おやすみなさい ✦</p>
+    </div>
+
+    <!-- ── LOG VIEW ── -->
+    <div id="view-log" class="view">
+      <div class="log-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">✦</span>
+          <input type="text" id="search-input" placeholder="キーワードや日付で検索..." oninput="renderLog()">
+        </div>
+        <button class="csv-btn" onclick="exportCSV()">↓ CSV</button>
+      </div>
+      <div id="log-list"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ══ 設定 ══ */
+const SUPABASE_URL = "https://icgpcypttyxhahwhsgow.supabase.co";
+const SUPABASE_KEY = "sb_publishable_D6dlEl8cdyhjKVxGAvmKEA_zR0HjygM";
+const PASSWORD     = "shiho40";
+const TABLE        = "entries";
+
+/* ══ パスワード認証 ══ */
+function checkPassword() {
+  const val = document.getElementById("lock-input").value;
+  if (val === PASSWORD) {
+    document.getElementById("lock-screen").style.display = "none";
+    document.getElementById("main-content").style.display = "block";
+    initWrite();
+  } else {
+    document.getElementById("lock-error").textContent = "パスワードが違います";
+    document.getElementById("lock-input").value = "";
+  }
+}
+document.getElementById("lock-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") checkPassword();
+});
+
+/* ══ Supabase API ══ */
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": options.prefer || "",
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadEntries() {
+  return await sbFetch(`${TABLE}?order=date.desc&select=*`);
+}
+
+async function upsertEntry(entry) {
+  return await sbFetch(TABLE, {
+    method: "POST",
+    prefer: "resolution=merge-duplicates",
+    body: JSON.stringify(entry),
+  });
+}
+
+/* ══ ステータス表示 ══ */
+function setStatus(state, text) {
+  const dot  = document.getElementById("status-dot");
+  const label = document.getElementById("status-text");
+  dot.className = "status-dot " + state;
+  label.textContent = text;
+}
+
+/* ══ ユーティリティ ══ */
+function todayStr() { return new Date().toISOString().split("T")[0]; }
+function formatDate(d) {
+  return new Date(d+"T00:00:00").toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short"});
+}
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h>=21||h<1)  return "今夜も一日お疲れ様でした。\nゆっくり振り返ってみましょう。";
+  if (h>=1&&h<5)   return "夜更かしですね。\n今日の良かったことを残しておきましょう。";
+  if (h>=5&&h<12)  return "おはようございます。\n昨日の良かったことを記録しましょう。";
+  if (h>=12&&h<18) return "今日はどんな一日でしたか？\n良かったことを書き留めておきましょう。";
+  return "夜に向かう時間ですね。\n今日の良かったことを振り返りましょう。";
+}
+function escapeHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+/* ══ 初期化 ══ */
+async function initWrite() {
+  const today = todayStr();
+  document.getElementById("today-label").textContent = formatDate(today);
+  document.getElementById("greeting-text").textContent = getGreeting();
+
+  // 名言
+  const q = getDailyQuote();
+  document.getElementById("quote-text").textContent = q.text;
+  document.getElementById("quote-author").textContent = "― " + q.author;
+
+  setStatus("loading", "接続中...");
+  try {
+    const entries = await loadEntries();
+    setStatus("ok", "クラウドに接続済み");
+    const existing = entries.find(e => e.date === today);
+    if (existing) {
+      document.getElementById("already-saved-msg").style.display = "block";
+      const th = existing.things || [];
+      document.getElementById("t1").value = th[0] || "";
+      document.getElementById("t2").value = th[1] || "";
+      document.getElementById("t3").value = th[2] || "";
+      document.getElementById("ts").value = existing.stress || "";
+    } else {
+      document.getElementById("already-saved-msg").style.display = "none";
+      ["t1","t2","t3","ts"].forEach(id => document.getElementById(id).value = "");
+    }
+    document.getElementById("entry-count").textContent =
+      entries.length > 0 ? `✦ これまでの記録 ${entries.length} 日分` : "";
+  } catch(e) {
+    setStatus("err", "接続エラー — オフラインの可能性があります");
+  }
+}
+
+/* ══ 保存 ══ */
+async function saveEntry() {
+  const things = [
+    document.getElementById("t1").value.trim(),
+    document.getElementById("t2").value.trim(),
+    document.getElementById("t3").value.trim(),
+  ].filter(Boolean);
+  const stress = document.getElementById("ts").value.trim();
+  if (!things.length && !stress) return;
+
+  const btn = document.getElementById("save-btn");
+  btn.disabled = true; btn.textContent = "保存中...";
+
+  try {
+    await upsertEntry({ date: todayStr(), things, stress });
+    btn.textContent = "✦ 保存しました"; btn.classList.add("saved");
+    document.getElementById("already-saved-msg").style.display = "block";
+    setStatus("ok", "保存しました");
+    setTimeout(() => { btn.textContent = "保 存 す る"; btn.classList.remove("saved"); btn.disabled = false; }, 2200);
+    // カウント更新
+    const entries = await loadEntries();
+    document.getElementById("entry-count").textContent = `✦ これまでの記録 ${entries.length} 日分`;
+  } catch(e) {
+    btn.textContent = "保存に失敗しました"; btn.disabled = false;
+    setStatus("err", "保存エラー — ネット接続を確認してください");
+    setTimeout(() => { btn.textContent = "保 存 す る"; }, 2500);
+  }
+}
+
+/* ══ 履歴 ══ */
+async function renderLog() {
+  const container = document.getElementById("log-list");
+  const q = document.getElementById("search-input").value.toLowerCase().trim();
+
+  container.innerHTML = `<div class="empty-state">読み込み中...</div>`;
+  try {
+    const entries = await loadEntries();
+    const filtered = q
+      ? entries.filter(e =>
+          e.date.includes(q) ||
+          (e.things || []).some(t => t.toLowerCase().includes(q)) ||
+          (e.stress && e.stress.toLowerCase().includes(q))
+        )
+      : entries;
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="empty-state">${
+        !entries.length
+          ? "まだ記録がありません<br>今夜の良かったことを書いてみましょう ✦"
+          : "該当する記録が見つかりません"
+      }</div>`;
+      return;
+    }
+
+    container.innerHTML = filtered.map((entry, idx) => `
+      <div class="entry-card" style="animation-delay:${idx*0.05}s">
+        <div class="entry-date">${formatDate(entry.date)}</div>
+        ${(entry.things||[]).length ? `
+          <div class="entry-section-title good">✦ 良かったこと</div>
+          ${(entry.things).map((t,i) => `
+            <div class="entry-item">
+              <span class="entry-num">${i+1}</span>
+              <span class="entry-text">${escapeHtml(t)}</span>
+            </div>`).join("")}
+        ` : ""}
+        ${entry.stress ? `
+          <div class="entry-section-title stress" style="margin-top:14px">◦ もやもや・ストレス</div>
+          <div class="entry-item">
+            <span class="entry-num stress-num">…</span>
+            <span class="entry-text stress-text">${escapeHtml(entry.stress)}</span>
+          </div>` : ""}
+      </div>`).join("");
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state">読み込みに失敗しました</div>`;
+  }
+}
+
+/* ══ CSV書き出し ══ */
+async function exportCSV() {
+  try {
+    const entries = await loadEntries();
+    const rows = [["日付", "良かったこと1", "良かったこと2", "良かったこと3", "ストレス・もやもや"]];
+    entries.forEach(e => {
+      const th = e.things || [];
+      rows.push([e.date, th[0]||"", th[1]||"", th[2]||"", e.stress||""]);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const bom = "\uFEFF"; // Excelで文字化けしないようBOM付き
+    const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `3good_things_${todayStr()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert("書き出しに失敗しました");
+  }
+}
+
+/* ══ ビュー切替 ══ */
+function switchView(v, btn) {
+  document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
+  document.getElementById("view-" + v).classList.add("active");
+  btn.classList.add("active");
+  if (v === "write") initWrite();
+  if (v === "log")   renderLog();
+}
+
+/* ══ 名言 ══ */
+const QUOTES = [
+  { text: "今日という日は、残りの人生の最初の日だ。", author: "チャールズ・ディードリッヒ" },
+  { text: "失敗しても諦めないことで、成功できる。", author: "アルベルト・アインシュタイン" },
+  { text: "どんな嵐も、いつかは止む。", author: "ヴィクトール・ユーゴー" },
+  { text: "あなた自身を信じてみるだけでいい。きっと、生きる道が見えてくる。", author: "ゲーテ" },
+  { text: "夜が一番暗いのは夜明け直前だ。", author: "トーマス・フラー" },
+  { text: "小さな前進を毎日続けることが、偉大な結果を生む。", author: "サタヤ・ナデラ" },
+  { text: "咲かせることのできる花を、今日も咲かせなさい。", author: "マザー・テレサ" },
+  { text: "自分を大切にすることは、わがままではない。", author: "エレノア・ルーズベルト" },
+  { text: "今日という一日を、精一杯に生きよ。", author: "エイブラハム・リンカーン" },
+  { text: "人は夢を見ている限り、若い。", author: "サミュエル・ウルマン" },
+  { text: "継続することの力を、決して侮ってはいけない。", author: "田中角栄" },
+  { text: "石の上にも三年。じっと耐えて待てば、必ず道は開ける。", author: "日本のことわざ" },
+  { text: "幸せとは、小さなことを大切にする心の中にある。", author: "アンリ・マティス" },
+  { text: "笑顔は世界共通の言語だ。", author: "チャーリー・チャップリン" },
+  { text: "どんな日も、その日だけの美しさがある。", author: "ラルフ・ワルド・エマーソン" },
+  { text: "疲れた時こそ、自分をいたわることを忘れないで。", author: "ヘルマン・ヘッセ" },
+  { text: "あなたが今日経験したことは、明日の力になる。", author: "フリードリヒ・ニーチェ" },
+  { text: "一日を振り返ることは、明日をよくする最善の準備だ。", author: "ジョン・デューイ" },
+  { text: "人生は近くで見ると悲劇だが、遠くから見ると喜劇だ。", author: "チャーリー・チャップリン" },
+  { text: "困難は、乗り越えられる人のところにしかやってこない。", author: "ドストエフスキー" },
+  { text: "明日があると思うな、今日を精一杯に。", author: "宮本武蔵" },
+  { text: "休息は怠けではない。空の雲、草原、木陰は心の薬だ。", author: "ジョン・ラボック" },
+  { text: "あなたは今日も、十分よくやった。", author: "ブレネー・ブラウン" },
+  { text: "ゆっくりでもいい。前に進んでいることに変わりはない。", author: "コンフューシウス（孔子）" },
+  { text: "涙が流れた夜の後には、必ず朝が来る。", author: "詩篇 30:5" },
+  { text: "求めるものが手に入らなくても、手に入れられるものを愛せるようになれ。", author: "エピクテトス" },
+  { text: "外の世界を変えることはできない。でも、それに対する自分の姿勢は変えられる。", author: "エピクテトス" },
+  { text: "他人と自分を比べるな。昨日の自分と今日の自分を比べよ。", author: "エピクテトス" },
+  { text: "みんなちがって、みんないい。", author: "金子みすゞ" },
+  { text: "私と小鳥と鈴と、みんなちがって、みんないい。", author: "金子みすゞ『私と小鳥と鈴と』" },
+  { text: "星とたんぽぽ、見えぬものでも、あるんだよ。", author: "金子みすゞ『星とたんぽぽ』" },
+];
+function getDailyQuote() {
+  const day = new Date().toISOString().split("T")[0];
+  const seed = day.split("-").reduce((a,b) => a + parseInt(b), 0);
+  return QUOTES[seed % QUOTES.length];
+}
+
+/* ══ 星空 ══ */
+(function() {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let stars = [], W, H;
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  function initStars() {
+    stars = [];
+    for (let i = 0; i < Math.floor((W*H)/4000); i++)
+      stars.push({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.2+0.2,
+        alpha:Math.random()*0.7+0.1, speed:Math.random()*0.006+0.002, phase:Math.random()*Math.PI*2 });
+  }
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0,0,W,H); frame += 0.01;
+    stars.forEach(s => {
+      const a = s.alpha*(0.5+0.5*Math.sin(frame*s.speed*60+s.phase));
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(220,230,255,${a})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',()=>{ resize(); initStars(); });
+  resize(); initStars(); draw();
+
+  function shootingStar() {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    const sx=Math.random()*W*0.7+W*0.1, sy=Math.random()*H*0.3;
+    const len=120+Math.random()*80, angle=30+Math.random()*20, dur=700+Math.random()*400;
+    el.style.cssText=`position:fixed;top:${sy}px;left:${sx}px;width:${len}px;height:1px;
+      background:linear-gradient(90deg,rgba(255,255,255,0),white);
+      transform-origin:left center;transform:rotate(${angle}deg);
+      opacity:0;z-index:1;pointer-events:none;border-radius:1px;
+      transition:opacity ${dur*.2}ms ease,transform ${dur}ms linear;`;
+    requestAnimationFrame(()=>{
+      el.style.opacity='0.9';
+      el.style.transform=`rotate(${angle}deg) translateX(${len*1.2}px)`;
+      setTimeout(()=>{ el.style.opacity='0'; },dur*0.6);
+      setTimeout(()=>el.remove(),dur+200);
+    });
+    setTimeout(shootingStar,6000+Math.random()*10000);
+  }
+  setTimeout(shootingStar,3000);
+})();
+</script>
+</body>
+</html>
