@@ -541,13 +541,19 @@ async function saveEntry() {
   const btn = document.getElementById("save-btn");
   btn.disabled = true; btn.textContent = "保存中...";
 
+  const today = todayStr();
   try {
-    await upsertEntry({ date: todayStr(), things, stress });
+    // 既存レコードがあればPATCH、なければPOST
+    const existing = await sbFetch(`${TABLE}?date=eq.${today}&select=date`);
+    if (existing && existing.length > 0) {
+      await updateEntry(today, { things, stress });
+    } else {
+      await upsertEntry({ date: today, things, stress });
+    }
     btn.textContent = "✦ 保存しました"; btn.classList.add("saved");
     document.getElementById("already-saved-msg").style.display = "block";
     setStatus("ok", "保存しました");
     setTimeout(() => { btn.textContent = "保 存 す る"; btn.classList.remove("saved"); btn.disabled = false; }, 2200);
-    // カウント更新
     const entries = await loadEntries();
     document.getElementById("entry-count").textContent = `✦ これまでの記録 ${entries.length} 日分`;
   } catch(e) {
