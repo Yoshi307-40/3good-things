@@ -270,6 +270,15 @@
 
   .divider { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent-gold), transparent); margin: 0 auto 24px; opacity: 0.4; }
 
+  .edit-btn {
+    padding: 4px 12px; border-radius: 20px; font-size: 11px;
+    border: 1px solid rgba(201,169,110,0.25);
+    background: rgba(201,169,110,0.07); color: var(--accent-gold);
+    cursor: pointer; font-family: inherit; letter-spacing: 0.06em;
+    transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+  }
+  .edit-btn:hover { background: rgba(201,169,110,0.15); }
+
   .view { display: none; }
   .view.active { display: block; }
 
@@ -284,6 +293,24 @@
 </style>
 </head>
 <body>
+
+<!-- ══ 編集モーダル ══ -->
+<div id="edit-modal" style="display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);">
+  <div style="background:#1a1540; border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:28px 24px; width:92%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <p id="edit-date-label" style="font-size:13px; color:var(--accent-gold); letter-spacing:0.1em;"></p>
+      <button onclick="closeEdit()" style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; line-height:1;">×</button>
+    </div>
+    <input type="hidden" id="edit-date">
+    <div style="font-size:11px; color:var(--accent-gold); letter-spacing:0.18em; margin-bottom:12px; text-align:center;">良かったこと</div>
+    <textarea id="e1" placeholder="良かったこと 1" rows="2" style="width:100%;margin-bottom:8px;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--text-main);background:rgba(255,255,255,0.04);resize:none;outline:none;line-height:1.6;caret-color:var(--accent-gold);"></textarea>
+    <textarea id="e2" placeholder="良かったこと 2" rows="2" style="width:100%;margin-bottom:8px;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--text-main);background:rgba(255,255,255,0.04);resize:none;outline:none;line-height:1.6;caret-color:var(--accent-gold);"></textarea>
+    <textarea id="e3" placeholder="良かったこと 3" rows="2" style="width:100%;margin-bottom:16px;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--text-main);background:rgba(255,255,255,0.04);resize:none;outline:none;line-height:1.6;caret-color:var(--accent-gold);"></textarea>
+    <div style="font-size:11px; color:var(--accent-rose); letter-spacing:0.18em; margin-bottom:12px; text-align:center;">ストレス・もやもや</div>
+    <textarea id="es" placeholder="もやもや・ストレス" rows="2" style="width:100%;margin-bottom:20px;border:1px solid rgba(196,122,122,0.2);border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--text-main);background:rgba(196,122,122,0.03);resize:none;outline:none;line-height:1.6;caret-color:var(--accent-rose);"></textarea>
+    <button id="edit-save-btn" onclick="saveEdit()" style="width:100%;padding:13px;border-radius:12px;border:1px solid rgba(201,169,110,0.35);background:rgba(201,169,110,0.1);color:var(--accent-gold);font-size:14px;font-family:inherit;cursor:pointer;letter-spacing:0.15em;transition:all 0.3s;">保存する</button>
+  </div>
+</div>
 
 <canvas id="starfield"></canvas>
 <div class="bg-image"></div>
@@ -429,7 +456,15 @@ async function loadEntries() {
 async function upsertEntry(entry) {
   return await sbFetch(TABLE, {
     method: "POST",
-    prefer: "resolution=merge-duplicates",
+    headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify(entry),
+  });
+}
+
+async function updateEntry(date, entry) {
+  return await sbFetch(`${TABLE}?date=eq.${date}`, {
+    method: "PATCH",
+    headers: { "Prefer": "return=minimal" },
     body: JSON.stringify(entry),
   });
 }
@@ -549,7 +584,11 @@ async function renderLog() {
 
     container.innerHTML = filtered.map((entry, idx) => `
       <div class="entry-card" style="animation-delay:${idx*0.05}s">
-        <div class="entry-date">${formatDate(entry.date)}</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+          <div class="entry-date" style="margin-bottom:0; border-bottom:none; padding-bottom:0;">${formatDate(entry.date)}</div>
+          <button class="edit-btn" onclick="openEdit('${entry.date}')">✏️ 編集</button>
+        </div>
+        <div style="border-bottom:1px solid rgba(255,255,255,0.05); margin-bottom:12px;"></div>
         ${(entry.things||[]).length ? `
           <div class="entry-section-title good">✦ 良かったこと</div>
           ${(entry.things).map((t,i) => `
@@ -567,6 +606,54 @@ async function renderLog() {
       </div>`).join("");
   } catch(e) {
     container.innerHTML = `<div class="empty-state">読み込みに失敗しました</div>`;
+  }
+}
+
+/* ══ 編集モーダル ══ */
+async function openEdit(date) {
+  const modal = document.getElementById("edit-modal");
+  const entries = await loadEntries();
+  const entry = entries.find(e => e.date === date);
+  if (!entry) return;
+
+  document.getElementById("edit-date-label").textContent = formatDate(date);
+  document.getElementById("edit-date").value = date;
+  const th = entry.things || [];
+  document.getElementById("e1").value = th[0] || "";
+  document.getElementById("e2").value = th[1] || "";
+  document.getElementById("e3").value = th[2] || "";
+  document.getElementById("es").value = entry.stress || "";
+  modal.style.display = "flex";
+}
+
+function closeEdit() {
+  document.getElementById("edit-modal").style.display = "none";
+}
+
+async function saveEdit() {
+  const date = document.getElementById("edit-date").value;
+  const things = [
+    document.getElementById("e1").value.trim(),
+    document.getElementById("e2").value.trim(),
+    document.getElementById("e3").value.trim(),
+  ].filter(Boolean);
+  const stress = document.getElementById("es").value.trim();
+
+  const btn = document.getElementById("edit-save-btn");
+  btn.disabled = true; btn.textContent = "保存中...";
+
+  try {
+    await updateEntry(date, { things, stress });
+    btn.textContent = "✦ 保存しました";
+    setTimeout(() => {
+      btn.textContent = "保存する";
+      btn.disabled = false;
+      closeEdit();
+      renderLog();
+    }, 1200);
+  } catch(e) {
+    btn.textContent = "失敗しました";
+    btn.disabled = false;
   }
 }
 
