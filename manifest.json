@@ -1,0 +1,14 @@
+{
+  "name": "3 good things",
+  "short_name": "3 good things",
+  "description": "今日の良かったこと",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#080c20",
+  "theme_color": "#230879",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
